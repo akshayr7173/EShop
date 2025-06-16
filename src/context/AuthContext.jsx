@@ -22,14 +22,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("role", userData.role);
-    localStorage.setItem("userId", userData.userId);
+    localStorage.setItem("userId", userData.id); // ✅ Corrected: was userData.userId
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.clear();
     setUser(null);
-  };
+};
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>

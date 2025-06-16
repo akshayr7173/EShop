@@ -25,8 +25,9 @@ export default function App() {
         <BrowserRouter>
           <Navbar />
           <Routes>
-            {/* ✅ Default redirect */}
-            <Route path="/" element={<Navigate to="/register" replace />} />
+            {/* ✅ Default redirect based on auth status */}
+            <Route path="/" element={<ProtectedRoute><Navigate to="/home" replace /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
 
             {/* ✅ Public Auth Routes */}
             <Route path="/login" element={<Login />} />

@@ -26,7 +26,7 @@ const ProductDetails = () => {
 
   const fetchProduct = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/Product/${id}`);
+      const res = await axios.get(`https://localhost:7040/api/Product/${id}`);
       setProduct(res.data);
     } catch (err) {
       console.error("Error fetching product", err);
@@ -37,7 +37,7 @@ const ProductDetails = () => {
 
   const addToCart = async () => {
     try {
-      await axios.post(`http://localhost:5000/api/Cart/Add`, {
+      await axios.post(`https://localhost:7040/api/Cart/Add`, {
         userId,
         productId: product.id,
         quantity: 1,
@@ -52,7 +52,7 @@ const ProductDetails = () => {
   const addToWishlist = async () => {
     try {
       await axios.post(
-        `http://localhost:5000/api/Wishlist/Add`,
+        `https://localhost:7040/api/Wishlist/Add`,
         { userId, productId: product.id },
         { headers: { "Content-Type": "application/json" } }
       );

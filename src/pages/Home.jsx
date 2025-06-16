@@ -13,6 +13,9 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import ProductCard from "../pages/ProductCard";
 import FlashDeals from "../pages/FlashDeals";
+import banner1 from "../assets/banner1.jpeg";
+import banner2 from "../assets/banner2.jpeg";
+import banner3 from "../assets/banner3.jpeg";
 
 const Home = () => {
   const [flashProducts, setFlashProducts] = useState([]);
@@ -74,11 +77,7 @@ const Home = () => {
     setPage(1);
   };
 
-  const sliderImages = [
-    "/assets/banner1.jpg",
-    "/assets/banner2.jpg",
-    "/assets/banner3.jpg",
-  ];
+  const sliderImages = [banner1, banner2, banner3];
 
   const sliderSettings = {
     dots: true,
@@ -98,7 +97,7 @@ const Home = () => {
           {sliderImages.map((img, index) => (
             <Box key={index}>
               <img
-                src={process.env.PUBLIC_URL + img}
+                src={img}
                 alt={`banner-${index}`}
                 style={{
                   width: "100%",

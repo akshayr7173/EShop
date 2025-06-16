@@ -25,7 +25,7 @@ export default function Register() {
     } catch (err) {
       alert("Registration failed. " + err?.response?.data);
     }
-  };
+};
 
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>

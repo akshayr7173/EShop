@@ -167,14 +167,16 @@ const Navbar = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
-                <MenuItem onClick={() => { navigate("/profile"); handleMenuClose(); }}>Edit Profile</MenuItem>
-                {isCustomer && (
-                  <>
-                    <MenuItem onClick={() => { navigate("/orders"); handleMenuClose(); }}>My Orders</MenuItem>
-                    <MenuItem onClick={() => { navigate("/wishlist"); handleMenuClose(); }}>Wishlist</MenuItem>
-                  </>
-                )}
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                {[
+                  <MenuItem key="profile" onClick={() => { navigate("/profile"); handleMenuClose(); }}>Edit Profile</MenuItem>,
+                  ...(isCustomer
+                    ? [
+                        <MenuItem key="orders" onClick={() => { navigate("/orders"); handleMenuClose(); }}>My Orders</MenuItem>,
+                        <MenuItem key="wishlist" onClick={() => { navigate("/wishlist"); handleMenuClose(); }}>Wishlist</MenuItem>
+                      ]
+                    : []),
+                  <MenuItem key="logout" onClick={handleLogout}>Logout</MenuItem>
+                ]}
               </Menu>
             </>
           ) : (

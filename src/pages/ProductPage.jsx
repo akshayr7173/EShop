@@ -34,7 +34,7 @@ const ProductPage = () => {
 
   const fetchProducts = async () => {
     try {
-      let url = `http://localhost:5000/api/Product/Approved?page=${page}&pageSize=${pageSize}`;
+      let url = `http://localhost:5000/api/Product/Approved`;
       if (selectedCategory) url += `&category=${selectedCategory}`;
       const res = await axios.get(url);
       setProducts(res.data.products);
