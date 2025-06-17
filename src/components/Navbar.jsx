@@ -147,7 +147,7 @@ const Navbar = () => {
   const [results, setResults] = React.useState([]);
 
   const fuse = new Fuse(allProducts, {
-    keys: ["name", "category", "description"],
+    keys: ["name", "title", "category", "description"],
     threshold: 0.4,
   });
 
@@ -218,7 +218,7 @@ const Navbar = () => {
                     }}
                   >
                     <ListItemText
-                      primary={product.name}
+                      primary={product.name || product.title}
                       secondary={`₹${product.price} • ${product.category}`}
                       primaryTypographyProps={{
                         fontSize: '0.9rem',

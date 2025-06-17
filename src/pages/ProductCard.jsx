@@ -10,6 +10,8 @@ import {
   Box,
   Chip,
   Rating,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +19,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import BoltIcon from "@mui/icons-material/Bolt";
+import api from "../api/axios";
 
 const StyledCard = styled(Card)(({ theme }) => ({
   height: "100%",
@@ -130,122 +133,209 @@ const AddToCartButton = styled(Button)(({ theme }) => ({
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  
+  const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("token");
 
   // Calculate discount percentage (mock data)
   const originalPrice = product.price * 1.2; // Assuming 20% discount
   const discountPercent = Math.round(((originalPrice - product.price) / originalPrice) * 100);
 
-  const handleWishlistToggle = (e) => {
-    e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-    // Add wishlist API call here
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({ open: true, message, severity });
   };
 
-  const handleAddToCart = (e) => {
+  const handleWishlistToggle = async (e) => {
     e.stopPropagation();
-    // Add to cart API call here
-    console.log('Added to cart:', product.id);
+    
+    if (!userId) {
+      showSnackbar("Please login to add to wishlist", "error");
+      return;
+    }
+
+    try {
+      if (isWishlisted) {
+        // Remove from wishlist (assuming API exists)
+        await api.delete(`/Wishlist/Remove/${product.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsWishlisted(false);
+        showSnackbar("Removed from wishlist");
+      } else {
+        // Add to wishlist
+        await api.post("/Wishlist/Add", {
+          userId: parseInt(userId),
+          productId: product.id
+        }, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        setIsWishlisted(true);
+        showSnackbar("Added to wishlist!");
+      }
+    } catch (err) {
+      console.error("Wishlist error:", err);
+      showSnackbar("Failed to update wishlist", "error");
+    }
   };
 
-  const handleBuyNow = (e) => {
+  const handleAddToCart = async (e) => {
     e.stopPropagation();
-    navigate(`/product/${product.id}`);
+    
+    if (!userId) {
+      showSnackbar("Please login to add to cart", "error");
+      return;
+    }
+
+    try {
+      await api.post("/Cart/add", {
+        userId: parseInt(userId),
+        productId: product.id,
+        quantity: 1
+      }, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      showSnackbar("Added to cart!");
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      showSnackbar("Failed to add to cart", "error");
+    }
+  };
+
+  const handleBuyNow = async (e) => {
+    e.stopPropagation();
+    
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+
+    // Add to cart first, then navigate
+    try {
+      await handleAddToCart(e);
+      navigate("/cart");
+    } catch (err) {
+      navigate(`/product/${product.id}`);
+    }
   };
 
   return (
-    <StyledCard className="animate-fade-in-up">
-      <Box sx={{ position: 'relative' }}>
-        <ProductImage
-          className="product-image"
-          component="img"
-          image={product.imageUrl || "/assets/default.png"}
-          alt={product.title || product.name}
-          onClick={() => navigate(`/product/${product.id}`)}
-        />
-        
-        <QuickActions className="quick-actions">
-          <ActionButton onClick={handleWishlistToggle}>
-            {isWishlisted ? (
-              <FavoriteIcon sx={{ color: 'error.main' }} />
-            ) : (
-              <FavoriteBorderIcon />
-            )}
-          </ActionButton>
-          <ActionButton onClick={handleAddToCart}>
-            <ShoppingCartIcon />
-          </ActionButton>
-        </QuickActions>
+    <>
+      <StyledCard className="animate-fade-in-up">
+        <Box sx={{ position: 'relative' }}>
+          <ProductImage
+            className="product-image"
+            component="img"
+            image={product.imageUrl || "/assets/default.png"}
+            alt={product.title || product.name}
+            onClick={() => navigate(`/product/${product.id}`)}
+          />
+          
+          <QuickActions className="quick-actions">
+            <ActionButton onClick={handleWishlistToggle}>
+              {isWishlisted ? (
+                <FavoriteIcon sx={{ color: 'error.main' }} />
+              ) : (
+                <FavoriteBorderIcon />
+              )}
+            </ActionButton>
+            <ActionButton onClick={handleAddToCart}>
+              <ShoppingCartIcon />
+            </ActionButton>
+          </QuickActions>
 
-        {discountPercent > 0 && (
-          <Box sx={{ position: 'absolute', top: 12, left: 12 }}>
-            <DiscountChip label={`${discountPercent}% OFF`} size="small" />
-          </Box>
-        )}
-      </Box>
-
-      <CardContent sx={{ flexGrow: 1, p: 2 }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            fontSize: '1rem',
-            fontWeight: 600,
-            mb: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            lineHeight: 1.4,
-            cursor: 'pointer',
-          }}
-          onClick={() => navigate(`/product/${product.id}`)}
-        >
-          {product.title || product.name}
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Rating value={4.2} precision={0.1} size="small" readOnly />
-          <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-            (4.2)
-          </Typography>
+          {discountPercent > 0 && (
+            <Box sx={{ position: 'absolute', top: 12, left: 12 }}>
+              <DiscountChip label={`${discountPercent}% OFF`} size="small" />
+            </Box>
+          )}
         </Box>
 
-        <PriceBox>
-          <CurrentPrice>₹{product.price}</CurrentPrice>
-          {discountPercent > 0 && (
-            <OriginalPrice>₹{Math.round(originalPrice)}</OriginalPrice>
+        <CardContent sx={{ flexGrow: 1, p: 2 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontSize: '1rem',
+              fontWeight: 600,
+              mb: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              lineHeight: 1.4,
+              cursor: 'pointer',
+            }}
+            onClick={() => navigate(`/product/${product.id}`)}
+          >
+            {product.title || product.name}
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Rating value={4.2} precision={0.1} size="small" readOnly />
+            <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+              (4.2)
+            </Typography>
+          </Box>
+
+          <PriceBox>
+            <CurrentPrice>₹{product.price}</CurrentPrice>
+            {discountPercent > 0 && (
+              <OriginalPrice>₹{Math.round(originalPrice)}</OriginalPrice>
+            )}
+          </PriceBox>
+
+          {product.category && (
+            <Chip 
+              label={product.category} 
+              size="small" 
+              variant="outlined"
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            />
           )}
-        </PriceBox>
+        </CardContent>
 
-        {product.category && (
-          <Chip 
-            label={product.category} 
-            size="small" 
+        <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
+          <BuyButton
+            variant="contained"
+            startIcon={<BoltIcon />}
+            onClick={handleBuyNow}
+            fullWidth
+          >
+            Buy Now
+          </BuyButton>
+          <AddToCartButton
             variant="outlined"
-            sx={{ mt: 1, fontSize: '0.75rem' }}
-          />
-        )}
-      </CardContent>
+            startIcon={<ShoppingCartIcon />}
+            onClick={handleAddToCart}
+            fullWidth
+          >
+            Add to Cart
+          </AddToCartButton>
+        </CardActions>
+      </StyledCard>
 
-      <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
-        <BuyButton
-          variant="contained"
-          startIcon={<BoltIcon />}
-          onClick={handleBuyNow}
-          fullWidth
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ borderRadius: '12px' }}
         >
-          Buy Now
-        </BuyButton>
-        <AddToCartButton
-          variant="outlined"
-          startIcon={<ShoppingCartIcon />}
-          onClick={handleAddToCart}
-          fullWidth
-        >
-          Add to Cart
-        </AddToCartButton>
-      </CardActions>
-    </StyledCard>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 
