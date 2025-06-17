@@ -13,32 +13,115 @@ import {
   Paper,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Avatar,
+  Chip
 } from "@mui/material";
-import { ShoppingCart, Favorite, AccountCircle } from "@mui/icons-material";
+import { 
+  ShoppingCart, 
+  Favorite, 
+  AccountCircle, 
+  Search,
+  Store,
+  Dashboard,
+  AdminPanelSettings
+} from "@mui/icons-material";
 import { styled, alpha } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ProductSearchContext } from "../context/ProductSearchContext";
 import Fuse from "fuse.js";
 
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  background: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(20px)',
+  borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  color: '#1a1a1a',
+}));
+
 const SearchWrapper = styled("div")(({ theme }) => ({
   position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.black, 0.05),
+  borderRadius: '12px',
+  backgroundColor: alpha('#f8fafc', 0.8),
+  border: '1px solid rgba(0, 0, 0, 0.08)',
   "&:hover": {
-    backgroundColor: alpha(theme.palette.common.black, 0.1),
+    backgroundColor: alpha('#f1f5f9', 0.9),
+    borderColor: 'rgba(0, 0, 0, 0.12)',
+  },
+  "&:focus-within": {
+    backgroundColor: '#ffffff',
+    borderColor: theme.palette.primary.main,
+    boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
   },
   marginLeft: 0,
   width: "100%",
-  [theme.breakpoints.up("sm")]: {
-    width: "400px",
-  },
+  maxWidth: "500px",
+  transition: 'all 0.2s ease',
 }));
 
 const SearchInput = styled(InputBase)(({ theme }) => ({
-  padding: theme.spacing(1, 2),
+  padding: theme.spacing(1.5, 2),
   width: "100%",
+  fontSize: '0.95rem',
+  '& .MuiInputBase-input': {
+    '&::placeholder': {
+      color: '#64748b',
+      opacity: 1,
+    }
+  }
+}));
+
+const LogoText = styled(Typography)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #0ea5e9, #d946ef)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+  fontWeight: 700,
+  fontSize: '1.5rem',
+  cursor: 'pointer',
+  transition: 'transform 0.2s ease',
+  '&:hover': {
+    transform: 'scale(1.05)',
+  }
+}));
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+  borderRadius: '12px',
+  padding: '10px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+    transform: 'translateY(-1px)',
+  }
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: '10px',
+  textTransform: 'none',
+  fontWeight: 500,
+  padding: '8px 16px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-1px)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  }
+}));
+
+const SearchResults = styled(Paper)(({ theme }) => ({
+  position: "absolute",
+  top: "100%",
+  left: 0,
+  right: 0,
+  zIndex: 1000,
+  marginTop: '4px',
+  borderRadius: '12px',
+  border: '1px solid rgba(0, 0, 0, 0.08)',
+  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+  maxHeight: 300,
+  overflowY: "auto",
+  background: 'rgba(255, 255, 255, 0.98)',
+  backdropFilter: 'blur(20px)',
 }));
 
 const Navbar = () => {
@@ -58,7 +141,7 @@ const Navbar = () => {
   const isSeller = user?.role === "Seller";
   const isAdmin = user?.role === "Admin";
 
-  // 🔍 Fuse.js search integration
+  // Search integration
   const { allProducts } = React.useContext(ProductSearchContext);
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState([]);
@@ -85,106 +168,188 @@ const Navbar = () => {
     setResults([]);
   };
 
+  const getRoleChip = () => {
+    if (isAdmin) return <Chip label="Admin" size="small" color="error" sx={{ ml: 1 }} />;
+    if (isSeller) return <Chip label="Seller" size="small" color="success" sx={{ ml: 1 }} />;
+    return null;
+  };
+
   return (
-    <AppBar position="sticky" color="default" sx={{ mb: 2 }}>
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+    <StyledAppBar position="sticky" elevation={0}>
+      <Toolbar sx={{ 
+        display: "flex", 
+        justifyContent: "space-between",
+        minHeight: '70px !important',
+        px: { xs: 2, md: 3 }
+      }}>
         {/* Logo */}
-        <Typography
+        <LogoText
           variant="h6"
           onClick={() => navigate("/")}
-          sx={{ cursor: "pointer", fontWeight: "bold" }}
         >
           🛒 MyShop
-        </Typography>
+        </LogoText>
 
-        {/* 🔍 Search Bar */}
-        <Box sx={{ position: "relative", width: "400px" }}>
+        {/* Search Bar */}
+        <Box sx={{ position: "relative", flex: 1, maxWidth: "500px", mx: 3 }}>
           <SearchWrapper>
-            <SearchInput
-              placeholder="Search products..."
-              value={query}
-              onChange={handleSearchChange}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', pl: 1 }}>
+              <Search sx={{ color: '#64748b', mr: 1 }} />
+              <SearchInput
+                placeholder="Search for products, brands and more..."
+                value={query}
+                onChange={handleSearchChange}
+              />
+            </Box>
           </SearchWrapper>
           {results.length > 0 && (
-            <Paper
-              elevation={3}
-              sx={{
-                position: "absolute",
-                top: "40px",
-                zIndex: 10,
-                width: "100%",
-                maxHeight: 250,
-                overflowY: "auto",
-              }}
-            >
-              <List dense>
+            <SearchResults elevation={0}>
+              <List dense sx={{ py: 0 }}>
                 {results.map((product) => (
                   <ListItem
                     button
                     key={product.id}
                     onClick={() => handleSelect(product.id)}
+                    sx={{
+                      py: 1.5,
+                      '&:hover': {
+                        backgroundColor: alpha('#0ea5e9', 0.04),
+                      }
+                    }}
                   >
                     <ListItemText
                       primary={product.name}
-                      secondary={`₹${product.price}`}
+                      secondary={`₹${product.price} • ${product.category}`}
+                      primaryTypographyProps={{
+                        fontSize: '0.9rem',
+                        fontWeight: 500
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: '0.8rem',
+                        color: '#64748b'
+                      }}
                     />
                   </ListItem>
                 ))}
               </List>
-            </Paper>
+            </SearchResults>
           )}
         </Box>
 
-        {/* Buttons & Icons */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button onClick={() => navigate("/")}>Home</Button>
-          <Button onClick={() => navigate("/products")}>Products</Button>
+        {/* Navigation & User Actions */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <StyledButton 
+            onClick={() => navigate("/")}
+            sx={{ display: { xs: 'none', md: 'flex' } }}
+          >
+            Home
+          </StyledButton>
+          
+          {isSeller && (
+            <StyledButton 
+              startIcon={<Store />}
+              onClick={() => navigate("/seller/dashboard")}
+              sx={{ display: { xs: 'none', md: 'flex' } }}
+            >
+              Dashboard
+            </StyledButton>
+          )}
+
+          {isAdmin && (
+            <StyledButton 
+              startIcon={<AdminPanelSettings />}
+              onClick={() => navigate("/admin")}
+              sx={{ display: { xs: 'none', md: 'flex' } }}
+            >
+              Admin
+            </StyledButton>
+          )}
 
           {user ? (
             <>
               {isCustomer && (
                 <>
-                  <IconButton onClick={() => navigate("/wishlist")}> 
+                  <StyledIconButton onClick={() => navigate("/wishlist")}> 
                     <Badge badgeContent={0} color="error">
                       <Favorite />
                     </Badge>
-                  </IconButton>
+                  </StyledIconButton>
 
-                  <IconButton onClick={() => navigate("/cart")}> 
+                  <StyledIconButton onClick={() => navigate("/cart")}> 
                     <Badge badgeContent={0} color="primary">
                       <ShoppingCart />
                     </Badge>
-                  </IconButton>
+                  </StyledIconButton>
                 </>
               )}
 
-              <IconButton onClick={handleMenuOpen}>
-                <AccountCircle />
-              </IconButton>
+              <StyledIconButton onClick={handleMenuOpen}>
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                  {user.name?.charAt(0).toUpperCase() || 'U'}
+                </Avatar>
+              </StyledIconButton>
+              
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
+                PaperProps={{
+                  sx: {
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+                    mt: 1,
+                    minWidth: 200,
+                  }
+                }}
               >
-                {[
-                  <MenuItem key="profile" onClick={() => { navigate("/profile"); handleMenuClose(); }}>Edit Profile</MenuItem>,
-                  ...(isCustomer
-                    ? [
-                        <MenuItem key="orders" onClick={() => { navigate("/orders"); handleMenuClose(); }}>My Orders</MenuItem>,
-                        <MenuItem key="wishlist" onClick={() => { navigate("/wishlist"); handleMenuClose(); }}>Wishlist</MenuItem>
-                      ]
-                    : []),
-                  <MenuItem key="logout" onClick={handleLogout}>Logout</MenuItem>
-                ]}
+                <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    {user.name}
+                    {getRoleChip()}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {user.email}
+                  </Typography>
+                </Box>
+                
+                <MenuItem onClick={() => { navigate("/profile"); handleMenuClose(); }}>
+                  Edit Profile
+                </MenuItem>
+                
+                {isCustomer && (
+                  <>
+                    <MenuItem onClick={() => { navigate("/orders"); handleMenuClose(); }}>
+                      My Orders
+                    </MenuItem>
+                    <MenuItem onClick={() => { navigate("/wishlist"); handleMenuClose(); }}>
+                      Wishlist
+                    </MenuItem>
+                  </>
+                )}
+                
+                <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                  Logout
+                </MenuItem>
               </Menu>
             </>
           ) : (
-            <Button variant="outlined" onClick={() => navigate("/login")}>Login</Button>
+            <StyledButton 
+              variant="contained" 
+              onClick={() => navigate("/login")}
+              sx={{
+                background: 'linear-gradient(135deg, #0ea5e9, #d946ef)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #0284c7, #c026d3)',
+                }
+              }}
+            >
+              Login
+            </StyledButton>
           )}
         </Box>
       </Toolbar>
-    </AppBar>
+    </StyledAppBar>
   );
 };
 
